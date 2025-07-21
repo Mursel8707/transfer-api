@@ -1,5 +1,4 @@
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 import httpx
 import os
@@ -12,35 +11,30 @@ app = FastAPI()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-
-REGION_PRICES = {
+route_prices = {
     ("Antalya Havaliman", "Kemer(Beldibi)"): 50,
     ("Antalya Havaliman", "Kemer(Göynük)"): 50,
-    ("Antalya Havaliman", "Kemer"): 50,
-    ("Antalya Havaliman", "Kemer(Çamyuva)"): 60,
-    ("Antalya Havaliman", "Kemer(Tekirova)"): 60,
-    ("Antalya Havaliman", "Antalya(merkez)"): 30,
-    ("Antalya Havaliman", "Konyaaltı"): 35,
-    ("Antalya Havaliman", "Belek"): 35,
-    ("Antalya Havaliman", "Side"): 60,
-    ("Antalya Havaliman", "Alanya"): 80
+    ("Antalya Havaliman", "Antalya(AVM)"): 50,
+    ("Kemer(Beldibi)", "Antalya(AVM)"): 100,
+    ("Kemer(Göynük)", "Antalya(AVM)"): 100,
+    ("Alanya(Mahmutlar)", "Antalya(AVM)"): 200
+    # ... добавь остальные маршруты здесь вручную или импортом
 }
-
 
 @app.get("/")
 def root():
     return {"message": "Transfer API is running"}
 
-class PriceLookup(BaseModel):
+class PriceByRegionRequest(BaseModel):
     from_address: str
     to_address: str
 
 @app.post("/get-price")
-def get_price(data: PriceLookup):
+def get_price(data: PriceByRegionRequest):
     key = (data.from_address, data.to_address)
-    price = REGION_PRICES.get(key)
+    price = route_prices.get(key)
     if price is None:
-        raise HTTPException(status_code=404, detail="Маршрут не найден")
+        return {"error": "Маршрут не найден"}
     return {"price": price}
 
 class BookingRequest(BaseModel):
@@ -57,22 +51,29 @@ class BookingRequest(BaseModel):
 @app.post("/book-transfer")
 def book_transfer(data: BookingRequest):
     key = (data.from_address, data.to_address)
-    price = REGION_PRICES.get(key)
+    price = route_prices.get(key)
     if price is None:
-        raise HTTPException(status_code=404, detail="Маршрут не найден")
+        return {"error": "Маршрут не найден"}
 
     message = (
-    "📥 Новое бронирование:\n\n"
-    f"🚗 Маршрут: {data.from_address} → {data.to_address}\n"
-    f"📅 Дата: {data.travel_date}\n"
-    f"👨‍👩‍👧 Взрослые: {data.adults}, Дети: {data.children}\n"
-    f"💶 Цена: {data.price} $\n"
-    f"📡 Wi-Fi: {'Да' if data.need_wifi else 'Нет'}\n"
-    f"🇷🇺 Рус. водитель: {'Да' if data.russian_driver else 'Нет'}\n"
-    f"📝 Комментарий: {data.comment or '—'}"
-)
-    send_telegram_message(message)
+        "📥 Новое бронирование:
 
+"
+        f"🚗 Маршрут: {data.from_address} → {data.to_address}
+"
+        f"📅 Дата: {data.travel_date}
+"
+        f"👨‍👩‍👧 Взрослые: {data.adults}, Дети: {data.children}
+"
+        f"💶 Цена: {price} $
+"
+        f"📡 Wi-Fi: {'Да' if data.need_wifi else 'Нет'}
+"
+        f"🇷🇺 Рус. водитель: {'Да' if data.russian_driver else 'Нет'}
+"
+        f"📝 Комментарий: {data.comment or '—'}"
+    )
+    send_telegram_message(message)
     return {"status": "success", "message": "Бронирование принято", "price": price}
 
 def send_telegram_message(text: str):
