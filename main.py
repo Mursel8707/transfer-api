@@ -693,10 +693,13 @@ class BookingRequest(BaseModel):
 
 from fastapi.responses import JSONResponse
 
+
 @app.post("/book-transfer", response_model=dict)
 def book_transfer(data: BookingRequest):
-    ...
-    return {"status": "success", "message": "Бронирование принято", "price": data.price}
+    key = (data.from_address, data.to_address)
+    price = route_prices.get(key)
+    if price is None:
+        return JSONResponse(status_code=400, content={"error": "Маршрут не найден"})
 
     message = (
         "📥 Новое бронирование:\n\n"
