@@ -56,21 +56,13 @@ def book_transfer(data: BookingRequest):
         return {"error": "Маршрут не найден"}
 
     message = (
-        "📥 Новое бронирование:
-
-"
-        f"🚗 Маршрут: {data.from_address} → {data.to_address}
-"
-        f"📅 Дата: {data.travel_date}
-"
-        f"👨‍👩‍👧 Взрослые: {data.adults}, Дети: {data.children}
-"
-        f"💶 Цена: {price} $
-"
-        f"📡 Wi-Fi: {'Да' if data.need_wifi else 'Нет'}
-"
-        f"🇷🇺 Рус. водитель: {'Да' if data.russian_driver else 'Нет'}
-"
+        "📥 Новое бронирование:\n\n"
+        f"🚗 Маршрут: {data.from_address} → {data.to_address}\n"
+        f"📅 Дата: {data.travel_date}\n"
+        f"👨‍👩‍👧 Взрослые: {data.adults}, Дети: {data.children}\n"
+        f"💵 Цена: {price} $\n"
+        f"📡 Wi-Fi: {'Да' if data.need_wifi else 'Нет'}\n"
+        f"🇷🇺 Рус. водитель: {'Да' if data.russian_driver else 'Нет'}\n"
         f"📝 Комментарий: {data.comment or '—'}"
     )
     send_telegram_message(message)
