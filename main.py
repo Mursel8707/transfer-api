@@ -712,12 +712,18 @@ def book_transfer(data: BookingRequest):
     return {"status": "success", "message": "Бронирование принято", "price": price}
 
 def send_telegram_message(text: str):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️ TELEGRAM_TOKEN или TELEGRAM_CHAT_ID не заданы.")
+        return
+
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": text
     }
     try:
-        httpx.post(url, json=payload, timeout=10)
+        response = httpx.post(url, json=payload, timeout=10)
+        if response.status_code != 200:
+            print("❌ Ошибка Telegram:", response.text)
     except Exception as e:
-        print("Ошибка при отправке в Telegram:", e)
+        print("❌ Telegram исключение:", e)
